@@ -1,8 +1,9 @@
 const express = require('express')
 const app = express()
 app.use(express.json())
-const { models: { User } } = require('./db')
+const { models: { User, Notes } } = require('./db')
 const path = require('path')
+
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
 
@@ -20,9 +21,21 @@ app.post('/api/auth', async (req, res, next) => {
 
 app.get('/api/auth', async (req, res, next) => {
   try {
-    res.send(await User.byToken(req.headers.authorization)) //header sent by browser, 
+    res.send(await User.byToken(req.headers.authorization)) //header sent by browser,
   } catch (ex) {
     next(ex)
+  }
+})
+
+app.get(`/api/user/${id}`, async (req, res, next) => {
+  try {
+    const user = await Notes.findOne({
+      where: {
+        userId: req.params.id }
+      }
+    )
+  } catch (err) {
+    next(err)
   }
 })
 
