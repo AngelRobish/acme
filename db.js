@@ -1,4 +1,9 @@
 const Sequelize = require('sequelize')
+const jwt = require('jsonwebtoken');
+
+// const SECRET_KEY = process.env.jwt
+// const token = jwt.sign({user:"user"}, process.env.JWT);
+
 const { STRING } = Sequelize
 const config = {
   logging: false
@@ -16,7 +21,9 @@ const User = conn.define('user', {
 
 User.byToken = async (token) => {
   try {
-    const user = await User.findByPk(token)
+    const payload = await jwt.verify(token, process.env.JWT) //returns userid. the userid which is the payload. payload is ans object that contains whatever we put in it during sign
+    console.log('payload ', payload)//payload object also called "claims"
+    const user = await User.findByPk(payload.userId)
     if (user) {
       return user
     }
@@ -30,7 +37,8 @@ User.byToken = async (token) => {
   }
 }
 
-User.authenticate = async ({ username, password }) => {
+User.authenticate = async ({username, password}) => { //check password and if correct, sign then user. once this runs, token ver
+
   const user = await User.findOne({
     where: {
       username,
@@ -38,7 +46,9 @@ User.authenticate = async ({ username, password }) => {
     }
   })
   if (user) {
-    return user.id
+    const token = await jwt.sign({userId: user.id}, process.env.JWT, {expiresIn: '5m'}) //creates a string
+    console.log('token ' ,token)
+    return token
   }
   const error = Error('bad credentials')
   error.status = 401
